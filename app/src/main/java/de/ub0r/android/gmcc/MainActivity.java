@@ -251,8 +251,12 @@ public class MainActivity extends Activity {
         SQLiteDatabase db = openMyMusicFile();
         Cursor c = db.query("music",
                 new String[]{"Id", "LocalCopySize", "LocalCopyPath", "Artist", "Title"},
-                " LocalCopyPath not null and Id not in (select MusicId from shouldkeepon where KeepOnId = 1 )",
-                null, null, null, "LastPlayDate ASC");
+                "LocalCopyPath not null and "
+                        + "Rating != 5 and not ("
+                        + "AlbumId in (select AlbumId from keepon where AlbumId not null) or "
+                        + "ArtistId in  (select ArtistId from keepon where ArtistId not null) or "
+                        + "Id in (select MusicId from listitems where ListId in (select ListId from keepon where ListId not null)))",
+                null, null, null, "Rating DESC, LastPlayDate ASC");
         Log.d(TAG, "#files: ", c.getCount());
         Log.d(TAG, "current cache size: ", currentCacheSize);
         Log.d(TAG, "target  cache size: ", targetCacheSize);
