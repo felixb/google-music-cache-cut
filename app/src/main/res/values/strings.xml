@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Google Music Cache Cut</string>
+    <string name="current_cache_size">Current cache size</string>
+    <string name="target_cache_size">Target cache size</string>
+    <string name="target_cache_size_hint">Cache size in MB</string>
+    <string name="cache_size">%1d MB</string>
+    <string name="go">Go!</string>
+    <string name="error_invalid_cacheSize">Invalid cache size</string>
+    <string name="error_small_cacheSize">Cache is already smaller</string>
+    <string name="error_update">Error updating cache size\n%1$s</string>
+
+    <string name="about">About</string>
+    <string name="about_text">This app tries to cut back space occupied by the Google Music app.\n\nThis app needs root access!\n\nCopyright 2014 - Felix Bechstein\nLicense: Apache 2.0\nSource code: https://github.com/felixb/google-music-cache-cut\n\nUsed Apache 2.0 licensed libraries:\nbutterknife - Jake Wharton (https://github.com/JakeWharton/butterknife)\nub0rlogg0r - Felix Bechstein (https://github.com/felixb/ub0rlogg0r)</string>
+
+</resources>
