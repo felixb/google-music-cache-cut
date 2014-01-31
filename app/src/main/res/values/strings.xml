@@ -5,8 +5,10 @@
     <string name="current_cache_size">Current cache size</string>
     <string name="target_cache_size">Target cache size</string>
     <string name="target_cache_size_hint">Cache size in MB</string>
-    <string name="cache_size">%1d MB</string>
+    <string name="cache_size">%1$d MB</string>
+    <string name="cache_size_free">used: %1$d MB / free: %2$d MB</string>
     <string name="go">Go!</string>
+    <string name="done">Done</string>
     <string name="error_invalid_cacheSize">Invalid cache size</string>
     <string name="error_small_cacheSize">Cache is already smaller</string>
     <string name="error_update">Error updating cache size\n%1$s</string>

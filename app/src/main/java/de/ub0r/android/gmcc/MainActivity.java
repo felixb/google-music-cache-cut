@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import butterknife.ButterKnife;
 import butterknife.InjectView;
@@ -43,12 +45,13 @@ public class MainActivity extends Activity {
             "/storage/sdcard0/Android/data/com.google.android.music/files/music/",
             "/storage/sdcard1/Android/data/com.google.android.music/files/music/",
             "/storage/sdcard2/Android/data/com.google.android.music/files/music/",
-
     };
 
     @SuppressLint("SdCardPath")
     private static final String GOOGLE_MUSIC_DATABASE
             = "/data/data/com.google.android.music/databases/music.db";
+
+    private static final Pattern DF_PATTERN = Pattern.compile("^[^ ]+ +[^ ]+ +[^ ]+ +([^ ]+)");
 
     @InjectView(R.id.current_cache_size)
     EditText mCurrentCacheSizeView;
@@ -165,6 +168,36 @@ public class MainActivity extends Activity {
             }
             r.close();
             mCurrentCacheSizeView.setText(getString(R.string.cache_size, mCurrentCacheSize));
+
+            // get free space
+            r = new BufferedReader(new InputStreamReader(
+                    runAsRoot("df " + mMusicDir + " | grep /")));
+            String line = r.readLine();
+            Matcher matcher = DF_PATTERN.matcher(line);
+            if (matcher.find()) {
+                int free;
+                line = matcher.group(1).trim();
+                Log.d(TAG, "free: ", line);
+                try {
+                    if (line.endsWith("G")) {
+                        free = (int) (Float.parseFloat(line.substring(0, line.length() - 1))
+                                * 1024);
+                    } else if (line.endsWith("M")) {
+                        free = (int) Float.parseFloat(line.substring(0, line.length() - 1));
+                    } else if (line.endsWith("k")) {
+                        free = (int) (Float.parseFloat(line.substring(0, line.length() - 1))
+                                / 1024);
+                    } else {
+                        free = 0;
+                    }
+                    mCurrentCacheSizeView
+                            .setText(getString(R.string.cache_size_free, mCurrentCacheSize, free));
+                } catch (NumberFormatException e) {
+                    Log.e(TAG, "invalid number: " + line, e);
+                }
+            }
+            r.close();
+
             File cacheDir = getCacheDir();
             assert cacheDir != null;
             if (!cacheDir.exists()) {
@@ -242,6 +275,7 @@ public class MainActivity extends Activity {
         reduceCache(targetCacheSize);
 
         updateData();
+        Toast.makeText(this, R.string.done, Toast.LENGTH_LONG).show();
     }
 
     void reduceCache(final int targetCacheSizeInMB) {
