@@ -8,6 +8,7 @@ import android.app.AlertDialog;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.Menu;
@@ -37,8 +38,13 @@ public class MainActivity extends Activity {
     private static final String MY_MUSIC_DB = "music.db";
 
     @SuppressLint("SdCardPath")
-    private static final String GOOGLE_MUSIC_FILES
-            = "/data/data/com.google.android.music/files/music";
+    private static final String[] GOOGLE_MUSIC_DIRS = new String[]{
+            "/data/data/com.google.android.music/files/music/",
+            "/storage/sdcard0/Android/data/com.google.android.music/files/music/",
+            "/storage/sdcard1/Android/data/com.google.android.music/files/music/",
+            "/storage/sdcard2/Android/data/com.google.android.music/files/music/",
+
+    };
 
     @SuppressLint("SdCardPath")
     private static final String GOOGLE_MUSIC_DATABASE
@@ -52,6 +58,10 @@ public class MainActivity extends Activity {
 
     @InjectView(R.id.go)
     Button mGoButton;
+
+    private String mMusicDir;
+
+    private boolean mIsInternalMusicDir;
 
     private int mCurrentCacheSize;
 
@@ -88,10 +98,15 @@ public class MainActivity extends Activity {
             } else {
                 mTargetCacheSizeView.requestFocus();
             }
+            mMusicDir = getMusicDir();
+            Log.i(TAG, "music dir: ", mMusicDir);
             updateData();
         } else {
             mCurrentCacheSize = savedInstanceState.getInt("mCurrentCacheSize");
+            mMusicDir = savedInstanceState.getString("mMusicDir");
         }
+        assert mMusicDir != null;
+        mIsInternalMusicDir = mMusicDir.equals(GOOGLE_MUSIC_DIRS[0]);
     }
 
     @Override
@@ -119,12 +134,30 @@ public class MainActivity extends Activity {
         b.show();
     }
 
+    private String getMusicDir() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            for (int i = 1; i < GOOGLE_MUSIC_DIRS.length; ++i) {
+                String dir = GOOGLE_MUSIC_DIRS[i];
+                File f = new File(dir);
+                if (!f.exists() || !f.isDirectory()) {
+                    continue;
+                }
+                if (f.list().length == 0) {
+                    continue;
+                }
+                return dir;
+            }
+        }
+        return GOOGLE_MUSIC_DIRS[0];
+    }
+
     private void updateData() {
         String s = null;
         try {
             // get cache size
             BufferedReader r = new BufferedReader(new InputStreamReader(
-                    runAsRoot("du -m " + GOOGLE_MUSIC_FILES + " | cut -f 1")));
+                    runAsRoot("du -m " + mMusicDir + " | cut -f 1")));
             s = r.readLine();
             if (s != null) {
                 s = s.trim();
@@ -174,6 +207,7 @@ public class MainActivity extends Activity {
     protected void onSaveInstanceState(@NotNull final Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt("mCurrentCacheSize", mCurrentCacheSize);
+        outState.putString("mMusicDir", mMusicDir);
     }
 
     @OnClick(R.id.go)
@@ -229,7 +263,8 @@ public class MainActivity extends Activity {
             String artist = c.getString(3);
             String title = c.getString(4);
             Log.i(TAG, "delete file: " +
-                    id + "/" + name + "/ " + artist + " - " + title + " // size: " + size + "B");
+                    id + "/" + name + "/ " + artist + " - " + title + " // size: " + (size / 1024
+                    / 1024) + "MB");
             deleteCacheFile(name);
             currentCacheSize -= size;
         }
@@ -239,11 +274,14 @@ public class MainActivity extends Activity {
     }
 
     private void deleteCacheFile(final String name) {
-
-        try {
-            runAsRoot("rm " + GOOGLE_MUSIC_FILES + "/" + name).close();
-        } catch (IOException e) {
-            Log.e(TAG, "could not remove file: ", name, e);
+        String path = mMusicDir + name;
+        Log.d(TAG, "deleteCacheFile(", path, ")");
+        if (mIsInternalMusicDir || !new File(path).delete()) {
+            try {
+                runAsRoot("rm " + path).close();
+            } catch (IOException e) {
+                Log.e(TAG, "could not remove file: ", path, e);
+            }
         }
     }
 }
