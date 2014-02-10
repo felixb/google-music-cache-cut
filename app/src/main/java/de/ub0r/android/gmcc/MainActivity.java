@@ -194,30 +194,33 @@ public class MainActivity extends Activity {
             r = new BufferedReader(new InputStreamReader(
                     runAsRoot("df " + mMusicDir + " | grep /")));
             String line = r.readLine();
-            Matcher matcher = DF_PATTERN.matcher(line);
-            if (matcher.find()) {
-                int free;
-                line = matcher.group(1).trim();
-                Log.d(TAG, "free: ", line);
-                try {
-                    if (line.endsWith("G")) {
-                        free = (int) (Float.parseFloat(line.substring(0, line.length() - 1))
-                                * 1024);
-                    } else if (line.endsWith("M")) {
-                        free = (int) Float.parseFloat(line.substring(0, line.length() - 1));
-                    } else if (line.endsWith("k")) {
-                        free = (int) (Float.parseFloat(line.substring(0, line.length() - 1))
-                                / 1024);
-                    } else {
-                        free = 0;
+            r.close();
+            if (line != null && line.length() > 0) {
+                Matcher matcher = DF_PATTERN.matcher(line);
+                if (matcher.find()) {
+                    int free;
+                    line = matcher.group(1).trim();
+                    Log.d(TAG, "free: ", line);
+                    try {
+                        if (line.endsWith("G")) {
+                            free = (int) (Float.parseFloat(line.substring(0, line.length() - 1))
+                                    * 1024);
+                        } else if (line.endsWith("M")) {
+                            free = (int) Float.parseFloat(line.substring(0, line.length() - 1));
+                        } else if (line.endsWith("k")) {
+                            free = (int) (Float.parseFloat(line.substring(0, line.length() - 1))
+                                    / 1024);
+                        } else {
+                            free = 0;
+                        }
+                        mCurrentCacheSizeView
+                                .setText(getString(R.string.cache_size_free, mCurrentCacheSize,
+                                        free));
+                    } catch (NumberFormatException e) {
+                        Log.e(TAG, "invalid number: " + line, e);
                     }
-                    mCurrentCacheSizeView
-                            .setText(getString(R.string.cache_size_free, mCurrentCacheSize, free));
-                } catch (NumberFormatException e) {
-                    Log.e(TAG, "invalid number: " + line, e);
                 }
             }
-            r.close();
 
             File cacheDir = getCacheDir();
             assert cacheDir != null;
@@ -233,7 +236,7 @@ public class MainActivity extends Activity {
                     "cp " + GOOGLE_MUSIC_DATABASE + " " + myMusicDb,
                     "chmod 644 " + myMusicDb
             }).close();
-            mGoButton.setEnabled(true);
+            updateGoButtonState();
         } catch (IOException e) {
             Log.e(TAG, "IO error", e);
             Toast.makeText(this, getString(R.string.error_update, e.getMessage()),
@@ -286,12 +289,17 @@ public class MainActivity extends Activity {
     }
 
     private void updateGoButtonState() {
-        mGoButton.setEnabled(getTargetCacheSize() < mCurrentCacheSize);
+        int targetCacheSize = getTargetCacheSize();
+        mGoButton.setEnabled(targetCacheSize > 0 && targetCacheSize < mCurrentCacheSize);
     }
 
     @OnClick(R.id.go)
     void onGoClick() {
         int targetCacheSize = getTargetCacheSize();
+        if (targetCacheSize <= 0) {
+            mGoButton.setEnabled(false);
+            return;
+        }
 
         PreferenceManager.getDefaultSharedPreferences(this).edit()
                 .putInt(PREF_TARGET_CACHE_SIZE, targetCacheSize).apply();
