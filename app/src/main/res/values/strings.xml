@@ -10,7 +10,6 @@
     <string name="go">Go!</string>
     <string name="done">Done</string>
     <string name="error_invalid_cacheSize">Invalid cache size</string>
-    <string name="error_small_cacheSize">Cache is already smaller</string>
     <string name="error_update">Error updating cache size\n%1$s</string>
 
     <string name="about">About</string>

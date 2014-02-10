@@ -13,7 +13,8 @@
             android:theme="@android:style/Theme.Holo">
         <activity
                 android:name="de.ub0r.android.gmcc.MainActivity"
-                android:label="@string/app_name">
+                android:label="@string/app_name"
+                android:windowSoftInputMode="stateAlwaysHidden|adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 

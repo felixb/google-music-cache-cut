@@ -10,7 +10,9 @@ import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Button;
@@ -35,7 +37,7 @@ public class MainActivity extends Activity {
 
     private static final String TAG = "MainActivity";
 
-    private static final String PREF_TARGET_CACHESIZE = "target_cache_size";
+    private static final String PREF_TARGET_CACHE_SIZE = "target_cache_size";
 
     private static final String MY_MUSIC_DB = "music.db";
 
@@ -92,10 +94,28 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.inject(this);
+        mTargetCacheSizeView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(final CharSequence s, final int start, final int count,
+                    final int after) {
+                // nothing to do
+            }
+
+            @Override
+            public void onTextChanged(final CharSequence s, final int start, final int count,
+                    final int after) {
+                // nothing to do
+            }
+
+            @Override
+            public void afterTextChanged(final Editable s) {
+                updateGoButtonState();
+            }
+        });
 
         if (savedInstanceState == null) {
             int size = PreferenceManager.getDefaultSharedPreferences(this)
-                    .getInt(PREF_TARGET_CACHESIZE, -1);
+                    .getInt(PREF_TARGET_CACHE_SIZE, -1);
             if (size > 0) {
                 mTargetCacheSizeView.setText(String.valueOf(size));
             } else {
@@ -108,6 +128,7 @@ public class MainActivity extends Activity {
             mCurrentCacheSize = savedInstanceState.getInt("mCurrentCacheSize");
             mMusicDir = savedInstanceState.getString("mMusicDir");
         }
+        updateGoButtonState();
         assert mMusicDir != null;
         mIsInternalMusicDir = mMusicDir.equals(GOOGLE_MUSIC_DIRS[0]);
     }
@@ -243,16 +264,14 @@ public class MainActivity extends Activity {
         outState.putString("mMusicDir", mMusicDir);
     }
 
-    @OnClick(R.id.go)
-    void onGoClick() {
+    private int getTargetCacheSize() {
         //noinspection ConstantConditions
         String s = mTargetCacheSizeView.getText().toString().trim();
         int targetCacheSize;
 
         // check input
         if (TextUtils.isEmpty(s)) {
-            mTargetCacheSizeView.setError(getString(R.string.error_invalid_cacheSize));
-            return;
+            return -1;
         }
 
         // check input
@@ -260,18 +279,22 @@ public class MainActivity extends Activity {
             targetCacheSize = Integer.parseInt(s);
         } catch (NumberFormatException e) {
             mTargetCacheSizeView.setError(getString(R.string.error_invalid_cacheSize));
-            return;
+            return -1;
         }
 
-        // check input
-        if (targetCacheSize > mCurrentCacheSize) {
-            Log.i(TAG, "target > current", targetCacheSize, ">", mCurrentCacheSize);
-            mTargetCacheSizeView.setError(getString(R.string.error_small_cacheSize));
-            return;
-        }
+        return targetCacheSize;
+    }
+
+    private void updateGoButtonState() {
+        mGoButton.setEnabled(getTargetCacheSize() < mCurrentCacheSize);
+    }
+
+    @OnClick(R.id.go)
+    void onGoClick() {
+        int targetCacheSize = getTargetCacheSize();
 
         PreferenceManager.getDefaultSharedPreferences(this).edit()
-                .putInt(PREF_TARGET_CACHESIZE, targetCacheSize).apply();
+                .putInt(PREF_TARGET_CACHE_SIZE, targetCacheSize).apply();
         reduceCache(targetCacheSize);
 
         updateData();
