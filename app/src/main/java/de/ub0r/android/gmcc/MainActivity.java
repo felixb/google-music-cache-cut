@@ -321,23 +321,29 @@ public class MainActivity extends Activity {
                         + "AlbumId in (select AlbumId from keepon where AlbumId not null) or "
                         + "ArtistId in  (select ArtistId from keepon where ArtistId not null) or "
                         + "Id in (select MusicId from listitems where ListId in (select ListId from keepon where ListId not null)))",
-                null, null, null, "Rating DESC, LastPlayDate ASC");
+                null, null, null, "Rating DESC, LastPlayDate ASC"
+        );
         Log.d(TAG, "#files: ", c.getCount());
         Log.d(TAG, "current cache size: ", currentCacheSize);
         Log.d(TAG, "target  cache size: ", targetCacheSize);
-        while (c.moveToNext() && currentCacheSize > targetCacheSize) {
-            long id = c.getLong(0);
-            long size = c.getLong(1);
-            String name = c.getString(2);
-            String artist = c.getString(3);
-            String title = c.getString(4);
-            Log.i(TAG, "delete file: " +
-                    id + "/" + name + "/ " + artist + " - " + title + " // size: " + (size / 1024
-                    / 1024) + "MB");
-            deleteCacheFile(name);
-            currentCacheSize -= size;
+        if (c.getCount() == 0) {
+            Toast.makeText(this, R.string.error_0files, Toast.LENGTH_LONG).show();
+        } else {
+            while (c.moveToNext() && currentCacheSize > targetCacheSize) {
+                long id = c.getLong(0);
+                long size = c.getLong(1);
+                String name = c.getString(2);
+                String artist = c.getString(3);
+                String title = c.getString(4);
+                Log.i(TAG, "delete file: " +
+                        id + "/" + name + "/ " + artist + " - " + title + " // size: " + (size
+                        / 1024
+                        / 1024) + "MB");
+                deleteCacheFile(name);
+                currentCacheSize -= size;
+            }
+            Log.i(TAG, "final cache size: ", currentCacheSize / 1024 / 1024, "MB");
         }
-        Log.i(TAG, "final cache size: ", currentCacheSize / 1024 / 1024, "MB");
         c.close();
         db.close();
     }
