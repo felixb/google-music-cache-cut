@@ -35,3 +35,4 @@ proguard/
 
 # mac stuff
 .DS_Store
+build
