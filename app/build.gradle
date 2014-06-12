@@ -58,6 +58,6 @@ repositories {
 
 dependencies {
     compile 'com.intellij:annotations:+@jar'
-    compile 'de.ub0r.android.logg0r:logg0r:1.1.+'
+    compile 'de.ub0r.android.logg0r:logg0r:+@jar'
     compile 'com.jakewharton:butterknife:+'
 }
